@@ -1,0 +1,134 @@
+<?php
+/**
+ * @file ddclover.module
+ *
+ * The module file for DD Clover.
+ */
+
+//define('DDCLOVER_CLIENT_ID', 'XBV2A5BTAEPDM');
+//define('DDCLOVER_CLIENT_SECRET', '7f663c3f-d438-ff62-a636-660199c15a24');
+
+define('DDCLOVER_CLIENT_ID', 'NJASA1B5VA0MP');
+define('DDCLOVER_CLIENT_SECRET', '3e32545e-6a10-de95-6219-af52539ab3fc');
+
+/**
+ * Implements hook_menu().
+ */
+function ddclover_menu() {
+  $items = array();
+  
+  // Settings form
+  //$items['admin/config/services/ddclover'] = array(
+  //);
+  
+  // Landing page for the Web app
+  $items['ddclover'] = array(
+    'title' => 'Designated Developers Clover App',
+    'description' => 'Landing page for the DD Clover app',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'ddclover_app_landing',
+    'access callback' => TRUE,
+  );
+  
+  // Landing page for merchant authorization
+  $items['ddclover/setup'] = array(
+    'title' => 'DD Clover App Setup',
+    'description' => 'Landing page for the Clover merchant redirects',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ddclover_redirect_landing'),
+    'access callback' => 'ddclover_redirect_landing_access',
+  );
+  
+  // Webhook to listen for Clover events
+  $items['ddclover/clover-hook'] = array(
+    'title' => 'Clover Webhook',
+    'description' => 'Webhook callback for receiving data from Clover.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'ddclover_webhook_clover',
+    'page arguments' => array(),
+    'access callback' => 'ddclover_webhook_clover_access',
+  );
+  
+  // Webhook to listen for merchant events
+  $items['ddclover/%ddclover_merchant/%'] = array(
+    'title' => 'Clover Merchant Webhook',
+    'description' => 'Webhook callback for receiving requests from merchant sites.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'ddclover_webhook_merchant',
+    'page arguments' => array(1,2),
+    'access callback' => 'ddclover_webhook_merchant_access',
+  );
+  
+  return $items;
+}
+
+/**
+ * Callback for the app landing page.
+ */
+function ddclover_app_landing() {
+  $output = array();
+  
+  $output[] = array(
+    '#markup' => '<p>' . t('This is the home of the Designated Developers Web application for Clover.') . '</p>',
+  );
+  
+  return $output;
+}
+
+/**
+ * Access callback for the Clover merchant redirect.
+ */
+function ddclover_redirect_landing_access() {
+  // TO DO
+  return TRUE;
+}
+
+/**
+ * Page callback for Clover merchant redirects.
+ */
+function ddclover_redirect_landing($form, &$form_state) {
+  if (empty($form_state['ddClover'])) {
+    $form_state['ddClover'] = new ddClover();
+  }
+  
+  $values = !empty($form_state['values']) ? $form_state['values'] : array('ddclover' => array());
+  
+}
+
+/**
+ * Access callback for the Clover webhook.
+ */
+function ddclover_webhook_clover_access() {
+  // TO DO
+  return TRUE;
+}
+
+/**
+ * Webhook callback for Clover events.
+ */
+function ddclover_webhook_clover() {
+  // TO DO
+}
+
+/**
+ * Webhook callback for Clover mercant events.
+ */
+function ddclover_webhook_merchant($ddclover_merchant, $action) {
+  // TO DO
+}
+
+/**
+ * Access callback for the merchant webhook.
+ */
+function ddclover_webhook_merchant_access() {
+  // TO DO
+  return TRUE;
+}
+
+/**
+ * Loader function for clover merchant objects.
+ */
+function ddclover_merchant_load($ddclover_merchant_id) {
+  
+}

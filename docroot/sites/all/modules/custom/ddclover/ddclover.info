@@ -1,0 +1,4 @@
+name = DD Clover
+description = This module acts as an app for integrating with Clover.
+core = 7.x
+package = DD
