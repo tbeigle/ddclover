@@ -31,6 +31,18 @@ class ddClover {
   }
   
   /**
+   * Populates the object with data from the merchant table.
+   */
+  public function load_merchant($merchant_id) {
+    $query = 'SELECT * FROM {ddclover_merchant} WHERE `merchant_id` = :merchant_id ORDER BY `merchant_id` LIMIT 1';
+    $row = db_query($query, array(':merchant_id' => $merchant_id))->fetchObject();
+    
+    $this->merchant_id = $merchant_id;
+    $this->access_token = $row->token;
+    $this->url = $row->url;
+  }
+  
+  /**
    * Fetches an access token for a merchant.
    */
   public function authorize($code) {

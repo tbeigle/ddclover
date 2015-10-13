@@ -233,7 +233,23 @@ function ddclover_webhook_clover() {
  * Webhook callback for Clover mercant events.
  */
 function ddclover_webhook_merchant($ddclover_merchant, $action) {
-  // TO DO
+  if (empty($_POST) || empty($_POST['merchant_id'] || empty($_POST['uid']))) return;
+  
+  $merchant_id = $_GET['ddclover_merchant_id'];
+  $uid = $_GET['ddclover_uid'];
+  
+  $count = db_query('COUNT(*) FROM {ddclover_employee} WHERE `uid` = :uid AND `merchant_id` = :merchant_id', array(
+    ':uid' => $_POST['uid'],
+    ':merchant_id' => $_POST['merchant_id']
+  ))
+  ->fetchField();
+  
+  if (empty($count)) return;
+  
+  $ddclover = new ddClover();
+  $ddclover->load_merchant($_POST['merchant_id']);
+  
+  
 }
 
 /**
