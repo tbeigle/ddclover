@@ -88,12 +88,130 @@ function ddclover_redirect_landing_access() {
  * Page callback for Clover merchant redirects.
  */
 function ddclover_redirect_landing($form, &$form_state) {
-  if (empty($form_state['ddClover'])) {
-    $form_state['ddClover'] = new ddClover();
+  if (empty($form)) $form = array();
+  
+  if (empty($_GET['code']) || empty($_GET['merchant_id']) || empty($_GET['client_id']) || $_GET['client_id'] != DDCLOVER_CLIENT_ID) {
+    drupal_goto('ddclover');
   }
+  
+  $token = !empty($form_state['values']['clover_token']) ? $form_state['values']['clover_token'] : '';
+  
+  if (!empty($form_state['values']['ddclover'])) {
+    $ddclover = $form_state['values']['ddclover'];
+  }
+  else {
+    $ddclover = new ddClover($token);
+  }
+  
+  $form['ddclover'] = array(
+    '#type' => 'value',
+    '#value' => $ddclover,
+  );
+  
+  $form['merchant_id'] = array(
+    '#title' => t('Merchant ID'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => $ddclover->merchant_id,
+    //'#disabled' => TRUE,
+  );
+  
+  $form['employee_id'] = array(
+    '#title' => t('Employee ID'),
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#default_value' => $ddclover->employee_id,
+    //'#disabled' => TRUE,
+  );
+  
+  $form['clover_token'] = array(
+    '#title' => t('Access Token'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => $ddclover->access_token,
+    //'#disabled' => TRUE,
+  );
+  
+  $form['url'] = array(
+    '#title' => t('Your Site URL'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  
+  $form['user_values'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User Account'),
+    '#tree' => TRUE,
+  );
+  
+  $form['user_values']['mail'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Address'),
+    '#required' => TRUE,
+  );
+  
+  $form['user_values']['pass'] = array(
+    '#type' => 'password',
+    '#title' => t('Password'),
+    '#required' => TRUE,
+  );
+  
+  $form['user_values']['pass2'] = array(
+    '#type' => 'password',
+    '#title' => t('Confirm Password'),
+    '#required' => TRUE,
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'save',
+  );
+  
+  $form['#validate'][] = 'ddclover_redirect_landing_validate';
+  $form['#submit'][] = 'ddclover_redirect_landing_submit';
   
   $values = !empty($form_state['values']) ? $form_state['values'] : array('ddclover' => array());
   
+  return $form;
+}
+
+/**
+ * Validation for the redirect landing form.
+ */
+function ddclover_redirect_landing_validate(&$form, &$form_state) {
+  $data = $form_state['values'];
+  
+  if ($u = user_load_by_mail($data['user_values']['mail'])) {
+    form_set_error('user_values][mail', 'That email address is already in use for another account.');
+  }
+  
+  if ($data['user_values']['pass2'] != $data['user_values']['pass']) {
+    form_set_error('user_values][pass', 'The passwords you entered do not match.');
+  }
+}
+
+/**
+ * Validation for the redirect landing form.
+ */
+function ddclover_redirect_landing_submit(&$form, &$form_state) {
+  $data = $form_state['values'];
+  
+  $user_values = array(
+    'mail' => $data['user_values']['mail'],
+    'pass' => $data['user_values']['pass'],
+  );
+  
+  $ddclover = $data['ddclover'];
+  if (empty($ddclover->access_token) && !empty($data['clover_token'])) {
+    $ddclover->access_token = $data['clover_token'];
+  }
+  $ddclover->url = trim($data['url'], '/');
+  
+  $ddclover->save_merchant();
+  $ddclover->save_employee($user_values);
+  
+  // Send data back to client's WP site to save authorization data
+  drupal_goto($ddclover->url . '/twclover?ddcm=' . $ddclover->merchant_id . '&ddcu=' .$ddclover->uid);
 }
 
 /**

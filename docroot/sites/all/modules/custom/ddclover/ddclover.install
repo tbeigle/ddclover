@@ -1,0 +1,61 @@
+<?php
+/**
+ * @file ddclover.install
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function ddclover_schema() {
+  $items = array();
+  
+  $items['ddclover_merchant'] = array(
+    'fields' => array(
+      'merchant_id' => array(
+        'description' => 'The primary identifier for a Clover merchant account.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'token' => array(
+        'description' => 'The API access token for the merchant.',
+        'type' => 'text',
+      ),
+      'url' => array(
+        'description' => 'The merchant website URL.',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('merchant_id'),
+  );
+  
+  $items['ddclover_employee'] = array(
+    'fields' => array(
+      'employee_id' => array(
+        'description' => 'The primary identifier for a Clover merchant employee account.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'merchant_id' => array(
+        'description' => 'The primary identifier for a Clover merchant account.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The primary user for a related user record.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('employee_id'),
+  );
+  
+  return $items;
+}
