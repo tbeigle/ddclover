@@ -51,12 +51,12 @@ function ddclover_menu() {
   );
   
   // Webhook to listen for merchant events
-  $items['ddclover/%ddclover_merchant/%'] = array(
+  $items['ddclover/merchant-hook/%ddclover_merchant'] = array(
     'title' => 'Clover Merchant Webhook',
     'description' => 'Webhook callback for receiving requests from merchant sites.',
     'type' => MENU_CALLBACK,
     'page callback' => 'ddclover_webhook_merchant',
-    'page arguments' => array(1,2),
+    'page arguments' => array(2),
     'access callback' => 'ddclover_webhook_merchant_access',
   );
   
@@ -114,6 +114,7 @@ function ddclover_redirect_landing($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => $ddclover->merchant_id,
     //'#disabled' => TRUE,
+    '#description' => DRUPAL_ROOT,
   );
   
   $form['employee_id'] = array(
@@ -233,30 +234,59 @@ function ddclover_webhook_clover() {
  * Webhook callback for Clover mercant events.
  */
 function ddclover_webhook_merchant($ddclover_merchant, $action) {
-  if (empty($_POST) || empty($_POST['merchant_id'] || empty($_POST['uid']))) return;
-  
-  $merchant_id = $_GET['ddclover_merchant_id'];
-  $uid = $_GET['ddclover_uid'];
-  
-  $count = db_query('COUNT(*) FROM {ddclover_employee} WHERE `uid` = :uid AND `merchant_id` = :merchant_id', array(
-    ':uid' => $_POST['uid'],
-    ':merchant_id' => $_POST['merchant_id']
-  ))
-  ->fetchField();
-  
-  if (empty($count)) return;
-  
-  $ddclover = new ddClover();
-  $ddclover->load_merchant($_POST['merchant_id']);
-  
-  
+  switch ($_POST['module']) {
+    case 'merchants': {
+      break;
+    }
+    case 'customers': {
+      break;
+    }
+    case 'employees': {
+      break;
+    }
+    case 'inventory': {
+      break;
+    }
+    case 'notifications': {
+      break;
+    }
+    case 'orders': {
+      break;
+    }
+    case 'payments': {
+      break;
+    }
+    case 'apps': {
+      break;
+    }
+  }
 }
 
 /**
  * Access callback for the merchant webhook.
  */
 function ddclover_webhook_merchant_access() {
-  // TO DO
+  $p = !emty($_POST) ? $_POST : array();
+  
+  // Deny access if any of the necessary post data is missing
+  if (empty($p['merchant_id']) || empty($p['uid']) || empty($p['mail']) || empty($p['module']) || empty($p['operation'])) return FALSE;
+  
+  // Deny access if the user email address does not match what was posted
+  $u = user_load($p['uid']);
+  if (empty($u->mail) || $u->mail != $p['mail']) return FALSE;
+  
+  $query =
+    'SELECT ddcm.`merchant_id` AS `merchant_id` ' .
+    'FROM {ddclover_merchant} ddcm ' .
+      'INNER JOIN {ddclover_employee} ddce ' .
+        'ON ddcm.`merchant_id` = ddce.`merchant_id` ' .
+    'WHERE ddce.`uid` = :uid';
+  $merchant_id = db_query($query, array(':uid' => $p['uid']));
+  
+  // Deny access if the user is not tied to a merchant ID
+  if (empty($merchant_id) || $merchant_id != $p['merchant_id']) return FALSE;
+  
+  // Everything checks out.
   return TRUE;
 }
 
@@ -264,5 +294,6 @@ function ddclover_webhook_merchant_access() {
  * Loader function for clover merchant objects.
  */
 function ddclover_merchant_load($ddclover_merchant_id) {
-  
+  $output = new ddClover();
+  $output->load_merchant($ddclover_merchant_id);
 }

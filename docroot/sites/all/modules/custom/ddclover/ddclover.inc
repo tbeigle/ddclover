@@ -87,25 +87,28 @@ class ddClover {
     $values = array(
       'mail' => $data['mail'],
       'name' => $data['mail'],
-      'pass' => array(
-        'pass1' => $data['pass'],
-        'pass2' => $data['pass'],
-      ),
+      'pass' => $data['pass'],
       'roles' => array(
         4,
       ),
     );
     
-    $u = entity_create('user', $values);
-    $uw = entity_metadata_wrapper('user', $u);
-    $uw->save();
+    $u = entity_create('user', array());
+    $u->name = $data['mail'];
+    $u->status = 1;
+    $u->roles = drupal_map_assoc(array(4) + array(DRUPAL_AUTHENTICATED_RID));
+    $u->init = $data['mail'];
+    $u->mail = $data['mail'];
+    require_once DRUPAL_ROOT . '/includes/password.inc';
+    $u->pass = user_hash_password($data['pass']);
+    entity_save('user', $u);
     
-    if (empty($uw->uid->value())) {
+    if (empty($u->uid)) {
       watchdog('ddclover', 'user create problem. <pre>!u</pre>', array('!u' => print_r($u, TRUE)), WATCHDOG_ERROR);
       return;
     }
     
-    $this->uid = $uw->uid->value();
+    $this->uid = $u->uid;
     
     // Save the employee record
     $inserted = db_insert('ddclover_employee')
