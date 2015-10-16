@@ -11,6 +11,36 @@
 define('DDCLOVER_CLIENT_ID', 'NJASA1B5VA0MP');
 define('DDCLOVER_CLIENT_SECRET', '3e32545e-6a10-de95-6219-af52539ab3fc');
 
+include_once 'ddclover.features.inc';
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ddclover_ctools_plugin_directory($owner, $plugin_type) {
+  if ('ddclover' == $owner) {
+    return "plugins/{$type}";
+  }
+}
+
+/**
+ * Implements hook_webhook_processor().
+ */
+function ddclover_webhook_processor() {
+  $path = drupal_get_path('module', 'ddclover') . '/plugins/processor';
+  $plugins = array();
+
+  $plugins['cloverlog'] = array(
+    'title' => t('Clover Logger'),
+    'processor' => array(
+      'path' => $path,
+      'file' => 'ddclover_Plugins_Processor_Clover.class.inc',
+      'class' => 'ddclover_Plugins_Processor_Clover',
+    ),
+  );
+
+  return $plugins;
+}
+
 /**
  * Implements hook_menu().
  */
@@ -23,7 +53,7 @@ function ddclover_menu() {
   
   // Landing page for the Web app
   $items['ddclover'] = array(
-    'title' => 'Designated Developers Clover App',
+    'title' => 'Designated Developers Clover Integration',
     'description' => 'Landing page for the DD Clover app',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'ddclover_app_landing',
@@ -227,7 +257,16 @@ function ddclover_webhook_clover_access() {
  * Webhook callback for Clover events.
  */
 function ddclover_webhook_clover() {
-  // TO DO
+  watchdog('ddclover', 'request method:<pre>!rm</pre>', array('!rm' => print_r($_SERVER['REQUEST_METHOD'], TRUE)));
+  if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    watchdog('ddclover', 'get check<pre>!get</pre>', array('!get' => print_r($_GET, TRUE)));
+  }
+  $received_json = file_get_contents("php://input",  TRUE);
+  watchdog('ddclover', 'webhook received check:<pre>' . print_r($received_json, TRUE) . '</pre>');
+  $json = drupal_json_decode($received_json, TRUE);
+  if (!empty($json)) {
+    watchdog('ddclover', 'webhook json check:<pre>' . print_r($json, TRUE) . '</pre>');
+  }
 }
 
 /**
@@ -296,4 +335,45 @@ function ddclover_webhook_merchant_access() {
 function ddclover_merchant_load($ddclover_merchant_id) {
   $output = new ddClover();
   $output->load_merchant($ddclover_merchant_id);
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ddclover_form_ctools_export_ui_edit_item_form_alter(&$form, &$form_state) {
+  if (isset($form['whid']) && empty($form['whid']['#value'])) {
+    $form['#validate'][] = 'ddclover_ctools_export_ui_edit_item_validate';
+  }
+}
+
+/**
+ * Custom validation for the ctools export ui edit form.
+ */
+function ddclover_ctools_export_ui_edit_item_validate(&$form, &$form_state) {
+  $errors = form_get_errors();
+  if (!empty($errors)) return;
+  
+  $data = $form_state['values'];
+  if (empty($data['whid']) && empty($form_state['item'])) {
+    $webhook = webhook_load($data['machine_name']);
+    if (empty($webhook)) {
+      $whid = db_insert('webhook')
+      ->fields(array(
+        'title' => $data['title'],
+        'machine_name' => $data['machine_name'],
+        'description' => $data['description'],
+        'unserializer' => $data['unserializer'],
+        'processor' => $data['processor'],
+        'enabled' => $data['enabled'],
+      ))
+      ->execute();
+      
+    }
+    else {
+      $whid = $webhook->whid;
+    }
+    
+    $form_state['values']['whid'] = $whid;
+  }
 }
