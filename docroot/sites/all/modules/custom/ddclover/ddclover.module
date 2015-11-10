@@ -10,6 +10,7 @@
 
 define('DDCLOVER_CLIENT_ID', 'NJASA1B5VA0MP');
 define('DDCLOVER_CLIENT_SECRET', '3e32545e-6a10-de95-6219-af52539ab3fc');
+define('DDCLOVER_WEBHOOK_AUTH_CODE', '3e6f901e-ae9e-44cb-a222-004a3a4053c5');
 
 include_once 'ddclover.features.inc';
 
